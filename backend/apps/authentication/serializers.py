@@ -48,38 +48,42 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_location(self, obj):
         """Devuelve información de ubicación"""
-        if obj.location_city or obj.location_state or obj.location_country:
+        location_city = getattr(obj, 'location_city', '')
+        location_state = getattr(obj, 'location_state', '')
+        location_country = getattr(obj, 'location_country', '')
+
+        if location_city or location_state or location_country:
             return {
-                'city': obj.location_city,
-                'state': obj.location_state,
-                'country': obj.location_country,
+                'city': location_city,
+                'state': location_state,
+                'country': location_country,
             }
         return None
 
     def get_preferences(self, obj):
         """Devuelve preferencias del usuario"""
         return {
-            'theme': obj.theme_preference,
-            'language': obj.preferred_language,
+            'theme': getattr(obj, 'theme_preference', 'auto'),
+            'language': getattr(obj, 'preferred_language', 'es'),
             'categories': [],  # Por ahora vacío, se puede extender después
             'notifications': {
-                'email': obj.notifications_enabled,
-                'push': obj.notifications_enabled,
+                'email': getattr(obj, 'notifications_enabled', True),
+                'push': getattr(obj, 'notifications_enabled', True),
                 'sms': False,
                 'marketing': False,
-                'updates': obj.notifications_enabled,
-                'recommendations': obj.notifications_enabled,
+                'updates': getattr(obj, 'notifications_enabled', True),
+                'recommendations': getattr(obj, 'notifications_enabled', True),
             }
         }
 
     def get_privacy(self, obj):
         """Devuelve configuración de privacidad"""
         return {
-            'profileVisibility': obj.profile_visibility,
-            'showEmail': obj.show_email,
-            'showPhone': obj.show_phone,
-            'showLocation': obj.show_location,
-            'showActivity': obj.show_activity,
+            'profileVisibility': getattr(obj, 'profile_visibility', 'public'),
+            'showEmail': getattr(obj, 'show_email', False),
+            'showPhone': getattr(obj, 'show_phone', False),
+            'showLocation': getattr(obj, 'show_location', False),
+            'showActivity': getattr(obj, 'show_activity', True),
         }
 
 
