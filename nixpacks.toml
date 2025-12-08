@@ -1,8 +1,9 @@
 [phases.setup]
 nixPkgs = ["python310", "postgresql"]
+aptPkgs = ["python3-pip"]
 
 [phases.install]
-cmds = ["cd backend && pip install -r requirements/production.txt"]
+cmds = ["cd backend && python -m pip install --upgrade pip", "cd backend && python -m pip install -r requirements/production.txt"]
 
 [phases.build]
 cmds = ["cd backend && python manage.py collectstatic --noinput"]
