@@ -16,12 +16,14 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from apps.authentication.urls import user_urlpatterns
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    
+
     # API endpoints
     path('api/auth/', include('apps.authentication.urls')),
+    path('api/users/', include(user_urlpatterns)),  # User profile endpoints
     path('api/businesses/', include('apps.businesses.urls')),  # Includes categories endpoint
     path('api/routes/', include('apps.routes.urls')),
     path('api/', include('apps.reviews.urls')),  # Reviews endpoints include business_id in path

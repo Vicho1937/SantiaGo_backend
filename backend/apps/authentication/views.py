@@ -99,10 +99,7 @@ def logout_view(request):
 @permission_classes([IsAuthenticated])
 def me_view(request):
     """Obtener usuario actual"""
-    return Response({
-        'success': True,
-        'data': UserSerializer(request.user).data
-    }, status=status.HTTP_200_OK)
+    return Response(UserSerializer(request.user).data, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
@@ -110,15 +107,110 @@ def me_view(request):
 def google_auth_view(request):
     """Login con Google OAuth"""
     serializer = GoogleAuthSerializer(data=request.data)
-    
+
     if serializer.is_valid():
         # TODO: Implementar validación con Google OAuth
         return Response({
             'success': False,
             'message': 'Autenticación con Google no implementada aún'
         }, status=status.HTTP_501_NOT_IMPLEMENTED)
-    
+
     return Response({
         'success': False,
         'errors': serializer.errors
     }, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def update_profile_view(request):
+    """Actualizar perfil del usuario"""
+    user = request.user
+
+    # Actualizar campos permitidos
+    if 'first_name' in request.data:
+        user.first_name = request.data['first_name']
+    if 'last_name' in request.data:
+        user.last_name = request.data['last_name']
+    if 'phone' in request.data:
+        user.phone = request.data['phone']
+    if 'bio' in request.data:
+        user.bio = request.data['bio']
+
+    # Actualizar ubicación
+    if 'location' in request.data:
+        location = request.data['location']
+        if isinstance(location, dict):
+            user.location_city = location.get('city', '')
+            user.location_state = location.get('state', '')
+            user.location_country = location.get('country', 'Chile')
+
+    user.save()
+
+    return Response(UserSerializer(user).data, status=status.HTTP_200_OK)
+
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def update_preferences_view(request):
+    """Actualizar preferencias del usuario"""
+    user = request.user
+
+    if 'theme' in request.data:
+        user.theme_preference = request.data['theme']
+    if 'language' in request.data:
+        user.preferred_language = request.data['language']
+    if 'notifications' in request.data:
+        notifications = request.data['notifications']
+        if isinstance(notifications, dict):
+            # Si cualquier notificación está habilitada, activar notifications_enabled
+            user.notifications_enabled = any(notifications.values())
+
+    user.save()
+
+    return Response(UserSerializer(user).data, status=status.HTTP_200_OK)
+
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def update_privacy_view(request):
+    """Actualizar configuración de privacidad"""
+    user = request.user
+
+    if 'profileVisibility' in request.data:
+        user.profile_visibility = request.data['profileVisibility']
+    if 'showEmail' in request.data:
+        user.show_email = request.data['showEmail']
+    if 'showPhone' in request.data:
+        user.show_phone = request.data['showPhone']
+    if 'showLocation' in request.data:
+        user.show_location = request.data['showLocation']
+    if 'showActivity' in request.data:
+        user.show_activity = request.data['showActivity']
+
+    user.save()
+
+    return Response(UserSerializer(user).data, status=status.HTTP_200_OK)
+
+
+@api_view(['POST', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def avatar_view(request):
+    """Subir o eliminar avatar del usuario"""
+    user = request.user
+
+    if request.method == 'POST':
+        # Por ahora, solo guardamos la URL
+        # En producción, aquí subirías el archivo a S3/Cloudinary
+        avatar_url = request.data.get('avatar')
+        if avatar_url:
+            user.avatar = avatar_url
+            user.save()
+            return Response({'avatar': user.avatar}, status=status.HTTP_200_OK)
+        return Response({'error': 'No avatar provided'}, status=status.HTTP_400_BAD_REQUEST)
+
+    elif request.method == 'DELETE':
+        user.avatar = ''
+        user.avatar_thumbnail = ''
+        user.save()
+        return Response({'message': 'Avatar eliminado'}, status=status.HTTP_200_OK)

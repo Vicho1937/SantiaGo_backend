@@ -9,16 +9,20 @@ class UserSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
     role = serializers.SerializerMethodField()
     emailVerified = serializers.SerializerMethodField()
+    location = serializers.SerializerMethodField()
+    preferences = serializers.SerializerMethodField()
+    privacy = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = (
             'id', 'email', 'username', 'name', 'role', 'emailVerified',
-            'first_name', 'last_name', 'phone', 'avatar',
-            'preferred_language', 'notifications_enabled',
+            'first_name', 'last_name', 'phone', 'bio', 'avatar', 'avatar_thumbnail',
+            'location', 'preferred_language', 'notifications_enabled',
+            'preferences', 'privacy',
             'routes_created', 'businesses_visited', 'created_at'
         )
-        read_only_fields = ('id', 'name', 'role', 'emailVerified', 'routes_created', 'businesses_visited', 'created_at')
+        read_only_fields = ('id', 'name', 'role', 'emailVerified', 'location', 'preferences', 'privacy', 'routes_created', 'businesses_visited', 'created_at')
 
     def get_name(self, obj):
         """Combina first_name y last_name en un solo campo name"""
@@ -41,6 +45,42 @@ class UserSerializer(serializers.ModelSerializer):
     def get_emailVerified(self, obj):
         """Devuelve si el email está verificado (por ahora siempre True)"""
         return True
+
+    def get_location(self, obj):
+        """Devuelve información de ubicación"""
+        if obj.location_city or obj.location_state or obj.location_country:
+            return {
+                'city': obj.location_city,
+                'state': obj.location_state,
+                'country': obj.location_country,
+            }
+        return None
+
+    def get_preferences(self, obj):
+        """Devuelve preferencias del usuario"""
+        return {
+            'theme': obj.theme_preference,
+            'language': obj.preferred_language,
+            'categories': [],  # Por ahora vacío, se puede extender después
+            'notifications': {
+                'email': obj.notifications_enabled,
+                'push': obj.notifications_enabled,
+                'sms': False,
+                'marketing': False,
+                'updates': obj.notifications_enabled,
+                'recommendations': obj.notifications_enabled,
+            }
+        }
+
+    def get_privacy(self, obj):
+        """Devuelve configuración de privacidad"""
+        return {
+            'profileVisibility': obj.profile_visibility,
+            'showEmail': obj.show_email,
+            'showPhone': obj.show_phone,
+            'showLocation': obj.show_location,
+            'showActivity': obj.show_activity,
+        }
 
 
 class RegisterSerializer(serializers.ModelSerializer):

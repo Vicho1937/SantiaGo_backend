@@ -9,19 +9,42 @@ class User(AbstractUser):
     email = models.EmailField(unique=True)
     phone = models.CharField(max_length=20, blank=True)
     avatar = models.URLField(blank=True)
-    
+    avatar_thumbnail = models.URLField(blank=True)
+    bio = models.TextField(blank=True, max_length=500)
+
     # OAuth providers
     google_id = models.CharField(max_length=255, blank=True, unique=True, null=True)
     github_id = models.CharField(max_length=255, blank=True, unique=True, null=True)
-    
+
+    # Ubicación
+    location_city = models.CharField(max_length=100, blank=True)
+    location_state = models.CharField(max_length=100, blank=True)
+    location_country = models.CharField(max_length=100, blank=True, default='Chile')
+
     # Preferencias
     preferred_language = models.CharField(max_length=10, default='es')
     notifications_enabled = models.BooleanField(default=True)
-    
+    theme_preference = models.CharField(max_length=10, default='auto', choices=[
+        ('light', 'Light'),
+        ('dark', 'Dark'),
+        ('auto', 'Auto'),
+    ])
+
+    # Privacidad
+    profile_visibility = models.CharField(max_length=10, default='public', choices=[
+        ('public', 'Public'),
+        ('friends', 'Friends'),
+        ('private', 'Private'),
+    ])
+    show_email = models.BooleanField(default=False)
+    show_phone = models.BooleanField(default=False)
+    show_location = models.BooleanField(default=False)
+    show_activity = models.BooleanField(default=True)
+
     # Stats
     routes_created = models.IntegerField(default=0)
     businesses_visited = models.IntegerField(default=0)
-    
+
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
