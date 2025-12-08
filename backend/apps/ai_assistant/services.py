@@ -36,8 +36,9 @@ class GeminiService:
         # Usar Gemini 1.5 Pro - Modelo avanzado con mejor contexto y razonamiento
         # Gemini 1.5 Pro ofrece ventana de contexto de 2M tokens y mejor comprensión
         try:
-            self.model = genai.GenerativeModel('gemini-1.5-pro')
-            print(f"✅ Modelo gemini-1.5-pro cargado correctamente")
+            # Usar el nombre correcto del modelo para la API v1beta
+            self.model = genai.GenerativeModel('gemini-pro')
+            print(f"✅ Modelo gemini-pro cargado correctamente")
         except Exception as e:
             print(f"❌ Error al cargar modelo: {str(e)}")
             raise
