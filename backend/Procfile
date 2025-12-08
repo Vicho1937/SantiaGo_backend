@@ -1,0 +1,2 @@
+release: python manage.py migrate && python manage.py loaddata fixtures/01_categories.json && python manage.py loaddata fixtures/02_features.json
+web: gunicorn config.wsgi:application --bind 0.0.0.0:$PORT
