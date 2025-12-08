@@ -10,4 +10,4 @@ cmds = [
 cmds = ["cd backend && python3 manage.py collectstatic --noinput"]
 
 [start]
-cmd = "cd backend && python3 manage.py migrate && /usr/local/bin/gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2"
+cmd = "cd backend && python3 manage.py migrate && PATH=$PATH:/root/.local/bin gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2"
