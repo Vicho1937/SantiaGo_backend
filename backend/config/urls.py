@@ -24,6 +24,7 @@ urlpatterns = [
     # API endpoints
     path('api/auth/', include('apps.authentication.urls')),
     path('api/users/', include(user_urlpatterns)),  # User profile endpoints
+    path('api/ai/', include('apps.ai_assistant.urls')),  # AI Assistant - RutaGO chatbot
     path('api/businesses/', include('apps.businesses.urls')),  # Includes categories endpoint
     path('api/routes/', include('apps.routes.urls')),
     path('api/', include('apps.reviews.urls')),  # Reviews endpoints include business_id in path
