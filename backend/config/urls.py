@@ -28,4 +28,5 @@ urlpatterns = [
     path('api/businesses/', include('apps.businesses.urls')),  # Includes categories endpoint
     path('api/routes/', include('apps.routes.urls')),
     path('api/', include('apps.reviews.urls')),  # Reviews endpoints include business_id in path
+    path('api/media/', include('apps.media.urls')),  # Media uploads (Cloudinary)
 ]

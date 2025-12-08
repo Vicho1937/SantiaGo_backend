@@ -55,6 +55,8 @@ INSTALLED_APPS = [
     'apps.businesses',
     'apps.routes',
     'apps.reviews',
+    'apps.ai_assistant',
+    'apps.media',
 ]
 
 MIDDLEWARE = [
