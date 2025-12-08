@@ -1,0 +1,92 @@
+[
+  {
+    "model": "businesses.feature",
+    "fields": {
+      "name": "WiFi",
+      "slug": "wifi",
+      "icon": "wifi",
+      "category": "amenity"
+    }
+  },
+  {
+    "model": "businesses.feature",
+    "fields": {
+      "name": "Terraza",
+      "slug": "terraza",
+      "icon": "sun",
+      "category": "amenity"
+    }
+  },
+  {
+    "model": "businesses.feature",
+    "fields": {
+      "name": "Pet-friendly",
+      "slug": "pet-friendly",
+      "icon": "dog",
+      "category": "amenity"
+    }
+  },
+  {
+    "model": "businesses.feature",
+    "fields": {
+      "name": "Accesible",
+      "slug": "accesible",
+      "icon": "accessibility",
+      "category": "accessibility"
+    }
+  },
+  {
+    "model": "businesses.feature",
+    "fields": {
+      "name": "Reservas",
+      "slug": "reservas",
+      "icon": "calendar",
+      "category": "service"
+    }
+  },
+  {
+    "model": "businesses.feature",
+    "fields": {
+      "name": "Delivery",
+      "slug": "delivery",
+      "icon": "truck",
+      "category": "service"
+    }
+  },
+  {
+    "model": "businesses.feature",
+    "fields": {
+      "name": "Take Away",
+      "slug": "take-away",
+      "icon": "shopping-bag",
+      "category": "service"
+    }
+  },
+  {
+    "model": "businesses.feature",
+    "fields": {
+      "name": "Estacionamiento",
+      "slug": "estacionamiento",
+      "icon": "parking",
+      "category": "amenity"
+    }
+  },
+  {
+    "model": "businesses.feature",
+    "fields": {
+      "name": "Eventos",
+      "slug": "eventos",
+      "icon": "calendar-days",
+      "category": "service"
+    }
+  },
+  {
+    "model": "businesses.feature",
+    "fields": {
+      "name": "Live Music",
+      "slug": "live-music",
+      "icon": "music",
+      "category": "amenity"
+    }
+  }
+]

@@ -1,0 +1,24 @@
+-r base.txt
+
+# Production Server
+gunicorn==21.2.0
+
+# Database (PostgreSQL with Railway/Render)
+dj-database-url==2.1.0
+psycopg2-binary==2.9.9
+
+# Static files serving
+whitenoise==6.6.0
+
+# Environment variables
+python-decouple==3.8
+
+# Monitoring
+sentry-sdk==1.39.2
+
+# Performance
+django-redis==5.4.0
+redis==5.0.1
+
+# Tasks (opcional - comentar si no usas)
+celery==5.3.6

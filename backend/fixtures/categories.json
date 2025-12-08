@@ -1,0 +1,146 @@
+[
+  {
+    "model": "businesses.category",
+    "fields": {
+      "name": "Café",
+      "slug": "cafe",
+      "icon": "coffee",
+      "color": "#8B4513",
+      "description": "Cafés y cafeterías locales",
+      "order": 1,
+      "is_active": true
+    }
+  },
+  {
+    "model": "businesses.category",
+    "fields": {
+      "name": "Restaurante",
+      "slug": "restaurante",
+      "icon": "utensils",
+      "color": "#E74C3C",
+      "description": "Restaurantes locales con cocina auténtica",
+      "order": 2,
+      "is_active": true
+    }
+  },
+  {
+    "model": "businesses.category",
+    "fields": {
+      "name": "Bar/Pub",
+      "slug": "bar-pub",
+      "icon": "beer",
+      "color": "#F39C12",
+      "description": "Bares y pubs locales",
+      "order": 3,
+      "is_active": true
+    }
+  },
+  {
+    "model": "businesses.category",
+    "fields": {
+      "name": "Galería",
+      "slug": "galeria",
+      "icon": "palette",
+      "color": "#9B59B6",
+      "description": "Galerías de arte",
+      "order": 4,
+      "is_active": true
+    }
+  },
+  {
+    "model": "businesses.category",
+    "fields": {
+      "name": "Tienda",
+      "slug": "tienda",
+      "icon": "shopping-bag",
+      "color": "#3498DB",
+      "description": "Tiendas locales",
+      "order": 5,
+      "is_active": true
+    }
+  },
+  {
+    "model": "businesses.category",
+    "fields": {
+      "name": "Librería",
+      "slug": "libreria",
+      "icon": "book",
+      "color": "#16A085",
+      "description": "Librerías independientes",
+      "order": 6,
+      "is_active": true
+    }
+  },
+  {
+    "model": "businesses.category",
+    "fields": {
+      "name": "Teatro",
+      "slug": "teatro",
+      "icon": "theater",
+      "color": "#E91E63",
+      "description": "Teatros y espacios culturales",
+      "order": 7,
+      "is_active": true
+    }
+  },
+  {
+    "model": "businesses.category",
+    "fields": {
+      "name": "Hostal",
+      "slug": "hostal",
+      "icon": "home",
+      "color": "#FF5722",
+      "description": "Hostales y alojamientos",
+      "order": 8,
+      "is_active": true
+    }
+  },
+  {
+    "model": "businesses.category",
+    "fields": {
+      "name": "Mercado",
+      "slug": "mercado",
+      "icon": "store",
+      "color": "#4CAF50",
+      "description": "Mercados locales",
+      "order": 9,
+      "is_active": true
+    }
+  },
+  {
+    "model": "businesses.category",
+    "fields": {
+      "name": "Artesanía",
+      "slug": "artesania",
+      "icon": "scissors",
+      "color": "#FF9800",
+      "description": "Artesanía local",
+      "order": 10,
+      "is_active": true
+    }
+  },
+  {
+    "model": "businesses.category",
+    "fields": {
+      "name": "Panadería",
+      "slug": "panaderia",
+      "icon": "croissant",
+      "color": "#D2691E",
+      "description": "Panaderías artesanales",
+      "order": 11,
+      "is_active": true
+    }
+  },
+  {
+    "model": "businesses.category",
+    "fields": {
+      "name": "Heladería",
+      "slug": "heladeria",
+      "icon": "ice-cream",
+      "color": "#00BCD4",
+      "description": "Heladerías artesanales",
+      "order": 12,
+      "is_active": true
+    }
+  }
+]
