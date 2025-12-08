@@ -97,6 +97,18 @@ def health_check_view(request):
     api_key_status = 'configurada' if api_key else 'NO CONFIGURADA'
     api_key_preview = f"{api_key[:10]}..." if api_key and len(api_key) > 10 else 'N/A'
     
+    # Listar modelos disponibles
+    available_models = []
+    try:
+        import google.generativeai as genai
+        genai.configure(api_key=api_key)
+        models = genai.list_models()
+        for model in models:
+            if 'generateContent' in model.supported_generation_methods:
+                available_models.append(model.name)
+    except Exception as e:
+        available_models = [f"Error listing models: {str(e)}"]
+    
     try:
         gemini_service = get_gemini_service()
         # Test simple
@@ -110,6 +122,7 @@ def health_check_view(request):
             'message': 'Gemini AI está funcionando correctamente' if not is_error else 'Gemini responde pero con errores',
             'api_key_status': api_key_status,
             'api_key_preview': api_key_preview,
+            'available_models': available_models,
             'test_response': test_response[:200] if test_response else 'Sin respuesta',
             'is_error_response': is_error
         }, status=status.HTTP_200_OK)
@@ -120,6 +133,7 @@ def health_check_view(request):
             'message': str(e),
             'api_key_status': api_key_status,
             'api_key_preview': api_key_preview,
+            'available_models': available_models,
             'details': 'Verifica que GEMINI_API_KEY esté configurada correctamente',
             'traceback': traceback.format_exc()
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
