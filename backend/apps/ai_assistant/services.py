@@ -19,16 +19,9 @@ class GeminiService:
             raise ValueError("GEMINI_API_KEY no está configurada en las variables de entorno")
 
         genai.configure(api_key=api_key)
-        # Usar Gemini 3 Pro - El modelo más avanzado de Google (Noviembre 2025)
-        # Superior en comprensión multimodal, razonamiento y desarrollo de agentes de IA
-        try:
-            self.model = genai.GenerativeModel('gemini-3-pro')
-        except:
-            # Fallback a Gemini 2.5 Pro o 1.5 Pro si 3 Pro no está disponible
-            try:
-                self.model = genai.GenerativeModel('gemini-2.5-pro')
-            except:
-                self.model = genai.GenerativeModel('gemini-1.5-pro')
+        # Usar Gemini 1.5 Pro - Modelo avanzado con mejor contexto y razonamiento
+        # Gemini 1.5 Pro ofrece ventana de contexto de 2M tokens y mejor comprensión
+        self.model = genai.GenerativeModel('gemini-1.5-pro')
 
         # Contexto del sistema para RutaGO
         self.system_context = """
@@ -166,8 +159,20 @@ Recuerda: Estás aquí para hacer que la experiencia de descubrir Santiago sea m
             return response.text
 
         except Exception as e:
-            print(f"Error al generar respuesta con Gemini: {str(e)}")
-            return "Lo siento, tuve un problema al procesar tu mensaje. ¿Podrías intentar de nuevo?"
+            error_msg = str(e)
+            print(f"Error al generar respuesta con Gemini: {error_msg}")
+            
+            # Log más detallado para debugging
+            import traceback
+            traceback.print_exc()
+            
+            # Mensaje de error más específico para el usuario
+            if "API key" in error_msg.lower() or "authentication" in error_msg.lower():
+                return "⚠️ Lo siento, hay un problema con la configuración del servicio. Por favor, contacta al administrador."
+            elif "quota" in error_msg.lower() or "limit" in error_msg.lower():
+                return "⚠️ El servicio está temporalmente saturado. Por favor, intenta de nuevo en unos minutos."
+            else:
+                return "Lo siento, tuve un problema al procesar tu mensaje. ¿Podrías intentar de nuevo?"
 
     def _build_prompt(self, user_message: str, conversation_history: list = None, businesses_context: list = None) -> str:
         """Construye el prompt completo con contexto e historial"""

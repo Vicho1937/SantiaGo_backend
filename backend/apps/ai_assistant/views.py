@@ -91,15 +91,17 @@ def suggest_route_view(request):
 def health_check_view(request):
     """Verificar que el servicio de AI está funcionando"""
     try:
+        gemini_service = get_gemini_service()
         # Test simple
-        test_response = gemini_service.generate_response("Hola")
+        test_response = gemini_service.generate_response("Hola, ¿cómo estás?")
         return Response({
             'status': 'ok',
             'message': 'Gemini AI está funcionando correctamente',
-            'test_response': test_response[:100] + "..."  # Primeros 100 caracteres
+            'test_response': test_response[:150] if test_response else 'Sin respuesta'
         }, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({
             'status': 'error',
-            'message': str(e)
+            'message': str(e),
+            'details': 'Verifica que GEMINI_API_KEY esté configurada correctamente'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
