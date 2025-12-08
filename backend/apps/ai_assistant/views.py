@@ -90,18 +90,36 @@ def suggest_route_view(request):
 @permission_classes([AllowAny])
 def health_check_view(request):
     """Verificar que el servicio de AI está funcionando"""
+    import os
+    
+    # Verificar si la API key está configurada
+    api_key = os.getenv('GEMINI_API_KEY')
+    api_key_status = 'configurada' if api_key else 'NO CONFIGURADA'
+    api_key_preview = f"{api_key[:10]}..." if api_key and len(api_key) > 10 else 'N/A'
+    
     try:
         gemini_service = get_gemini_service()
         # Test simple
         test_response = gemini_service.generate_response("Hola, ¿cómo estás?")
+        
+        # Verificar si la respuesta es un error
+        is_error = "problema al procesar" in test_response.lower() or "lo siento" in test_response.lower()
+        
         return Response({
-            'status': 'ok',
-            'message': 'Gemini AI está funcionando correctamente',
-            'test_response': test_response[:150] if test_response else 'Sin respuesta'
+            'status': 'ok' if not is_error else 'degraded',
+            'message': 'Gemini AI está funcionando correctamente' if not is_error else 'Gemini responde pero con errores',
+            'api_key_status': api_key_status,
+            'api_key_preview': api_key_preview,
+            'test_response': test_response[:200] if test_response else 'Sin respuesta',
+            'is_error_response': is_error
         }, status=status.HTTP_200_OK)
     except Exception as e:
+        import traceback
         return Response({
             'status': 'error',
             'message': str(e),
-            'details': 'Verifica que GEMINI_API_KEY esté configurada correctamente'
+            'api_key_status': api_key_status,
+            'api_key_preview': api_key_preview,
+            'details': 'Verifica que GEMINI_API_KEY esté configurada correctamente',
+            'traceback': traceback.format_exc()
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
