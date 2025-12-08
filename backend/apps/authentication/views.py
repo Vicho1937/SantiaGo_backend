@@ -22,21 +22,21 @@ def get_tokens_for_user(user):
 def register_view(request):
     """Registro de nuevo usuario"""
     serializer = RegisterSerializer(data=request.data)
-    
+
     if serializer.is_valid():
         user = serializer.save()
         tokens = get_tokens_for_user(user)
-        
+
         return Response({
-            'success': True,
-            'data': {
-                'user': UserSerializer(user).data,
-                'token': tokens['access'],
-                'refresh': tokens['refresh']
-            },
-            'message': 'Usuario registrado exitosamente'
+            'user': UserSerializer(user).data,
+            'tokens': {
+                'accessToken': tokens['access'],
+                'refreshToken': tokens['refresh'],
+                'tokenType': 'Bearer',
+                'expiresIn': 900
+            }
         }, status=status.HTTP_201_CREATED)
-    
+
     return Response({
         'success': False,
         'errors': serializer.errors,
@@ -49,23 +49,24 @@ def register_view(request):
 def login_view(request):
     """Login con email y contraseña"""
     serializer = LoginSerializer(data=request.data, context={'request': request})
-    
+
     if serializer.is_valid():
         user = serializer.validated_data['user']
         user.last_login_at = timezone.now()
         user.save(update_fields=['last_login_at'])
-        
+
         tokens = get_tokens_for_user(user)
-        
+
         return Response({
-            'success': True,
-            'data': {
-                'user': UserSerializer(user).data,
-                'token': tokens['access'],
-                'refresh': tokens['refresh']
+            'user': UserSerializer(user).data,
+            'tokens': {
+                'accessToken': tokens['access'],
+                'refreshToken': tokens['refresh'],
+                'tokenType': 'Bearer',
+                'expiresIn': 900
             }
         }, status=status.HTTP_200_OK)
-    
+
     return Response({
         'success': False,
         'errors': serializer.errors,
