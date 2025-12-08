@@ -5,7 +5,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
-from .services import gemini_service
+from .services import get_gemini_service
 
 
 @api_view(['POST'])
@@ -33,6 +33,7 @@ def chat_view(request):
 
     try:
         # Generar respuesta con Gemini
+        gemini_service = get_gemini_service()
         response_text = gemini_service.generate_response(
             user_message=message,
             conversation_history=conversation_history
@@ -70,6 +71,7 @@ def suggest_route_view(request):
 
     try:
         # Generar sugerencia de ruta
+        gemini_service = get_gemini_service()
         route_suggestion = gemini_service.suggest_route(preferences)
 
         return Response({

@@ -145,5 +145,12 @@ Formato claro y fácil de seguir.
         return "\n".join(formatted) if formatted else "Sin preferencias específicas"
 
 
-# Instancia global del servicio
-gemini_service = GeminiService()
+# Función para obtener instancia del servicio (lazy loading)
+_gemini_service_instance = None
+
+def get_gemini_service():
+    """Obtiene la instancia del servicio Gemini (lazy loading)"""
+    global _gemini_service_instance
+    if _gemini_service_instance is None:
+        _gemini_service_instance = GeminiService()
+    return _gemini_service_instance
