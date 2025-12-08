@@ -33,12 +33,12 @@ class GeminiService:
             print(f"❌ Error al configurar Gemini: {str(e)}")
             raise
         
-        # Usar Gemini 2.5 Pro - Modelo más avanzado disponible
-        # Gemini 2.5 Pro ofrece mejor razonamiento y comprensión contextual
+        # Usar Gemini Flash Latest - Modelo gratuito rápido y eficiente
+        # Disponible en el tier gratuito de Google AI Studio
+        # Límites: 15 RPM, 1M tokens/día, 1500 RPD
         try:
-            # Usar el nombre completo del modelo incluyendo el prefijo models/
-            self.model = genai.GenerativeModel('gemini-2.5-pro')
-            print(f"✅ Modelo gemini-2.5-pro cargado correctamente")
+            self.model = genai.GenerativeModel('gemini-flash-latest')
+            print(f"✅ Modelo gemini-flash-latest cargado correctamente")
         except Exception as e:
             print(f"❌ Error al cargar modelo: {str(e)}")
             raise
