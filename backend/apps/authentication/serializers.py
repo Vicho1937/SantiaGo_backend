@@ -6,15 +6,41 @@ from .models import User
 
 class UserSerializer(serializers.ModelSerializer):
     """Serializer para el modelo User"""
-    
+    name = serializers.SerializerMethodField()
+    role = serializers.SerializerMethodField()
+    emailVerified = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = (
-            'id', 'email', 'username', 'first_name', 'last_name',
-            'phone', 'avatar', 'preferred_language', 'notifications_enabled',
+            'id', 'email', 'username', 'name', 'role', 'emailVerified',
+            'first_name', 'last_name', 'phone', 'avatar',
+            'preferred_language', 'notifications_enabled',
             'routes_created', 'businesses_visited', 'created_at'
         )
-        read_only_fields = ('id', 'routes_created', 'businesses_visited', 'created_at')
+        read_only_fields = ('id', 'name', 'role', 'emailVerified', 'routes_created', 'businesses_visited', 'created_at')
+
+    def get_name(self, obj):
+        """Combina first_name y last_name en un solo campo name"""
+        if obj.first_name and obj.last_name:
+            return f"{obj.first_name} {obj.last_name}"
+        elif obj.first_name:
+            return obj.first_name
+        elif obj.last_name:
+            return obj.last_name
+        return obj.username
+
+    def get_role(self, obj):
+        """Devuelve el rol del usuario"""
+        if obj.is_superuser:
+            return 'admin'
+        elif obj.is_staff:
+            return 'staff'
+        return 'user'
+
+    def get_emailVerified(self, obj):
+        """Devuelve si el email está verificado (por ahora siempre True)"""
+        return True
 
 
 class RegisterSerializer(serializers.ModelSerializer):
