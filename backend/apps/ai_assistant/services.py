@@ -33,12 +33,12 @@ class GeminiService:
             print(f"❌ Error al configurar Gemini: {str(e)}")
             raise
         
-        # Usar Gemini 1.5 Pro - Modelo avanzado con mejor contexto y razonamiento
-        # Gemini 1.5 Pro ofrece ventana de contexto de 2M tokens y mejor comprensión
+        # Usar Gemini 2.5 Pro - Modelo más avanzado disponible
+        # Gemini 2.5 Pro ofrece mejor razonamiento y comprensión contextual
         try:
-            # Usar el nombre correcto del modelo para la API v1beta
-            self.model = genai.GenerativeModel('gemini-pro')
-            print(f"✅ Modelo gemini-pro cargado correctamente")
+            # Usar el nombre completo del modelo incluyendo el prefijo models/
+            self.model = genai.GenerativeModel('gemini-2.5-pro')
+            print(f"✅ Modelo gemini-2.5-pro cargado correctamente")
         except Exception as e:
             print(f"❌ Error al cargar modelo: {str(e)}")
             raise
