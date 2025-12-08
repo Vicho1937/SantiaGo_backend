@@ -21,5 +21,5 @@ user_urlpatterns = [
     path('profile/', views.update_profile_view, name='update_profile'),
     path('preferences/', views.update_preferences_view, name='update_preferences'),
     path('privacy/', views.update_privacy_view, name='update_privacy'),
-    path('avatar/', views.avatar_view, name='avatar'),
+    # NOTA: Avatar ahora se maneja en /api/media/profile/upload/ (Cloudinary)
 ]

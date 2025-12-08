@@ -193,24 +193,4 @@ def update_privacy_view(request):
     return Response(UserSerializer(user).data, status=status.HTTP_200_OK)
 
 
-@api_view(['POST', 'DELETE'])
-@permission_classes([IsAuthenticated])
-def avatar_view(request):
-    """Subir o eliminar avatar del usuario"""
-    user = request.user
-
-    if request.method == 'POST':
-        # Por ahora, solo guardamos la URL
-        # En producción, aquí subirías el archivo a S3/Cloudinary
-        avatar_url = request.data.get('avatar')
-        if avatar_url:
-            user.avatar = avatar_url
-            user.save()
-            return Response({'avatar': user.avatar}, status=status.HTTP_200_OK)
-        return Response({'error': 'No avatar provided'}, status=status.HTTP_400_BAD_REQUEST)
-
-    elif request.method == 'DELETE':
-        user.avatar = ''
-        user.avatar_thumbnail = ''
-        user.save()
-        return Response({'message': 'Avatar eliminado'}, status=status.HTTP_200_OK)
+# NOTA: avatar_view eliminado - ahora se usa /api/media/profile/upload/ (Cloudinary)
