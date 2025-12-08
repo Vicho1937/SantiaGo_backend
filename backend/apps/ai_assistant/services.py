@@ -16,7 +16,16 @@ class GeminiService:
             raise ValueError("GEMINI_API_KEY no está configurada en las variables de entorno")
 
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-1.5-pro')
+        # Usar Gemini 3 Pro - El modelo más avanzado de Google (Noviembre 2025)
+        # Superior en comprensión multimodal, razonamiento y desarrollo de agentes de IA
+        try:
+            self.model = genai.GenerativeModel('gemini-3-pro')
+        except:
+            # Fallback a Gemini 2.5 Pro o 1.5 Pro si 3 Pro no está disponible
+            try:
+                self.model = genai.GenerativeModel('gemini-2.5-pro')
+            except:
+                self.model = genai.GenerativeModel('gemini-1.5-pro')
 
         # Contexto del sistema para RutaGO
         self.system_context = """
