@@ -14,14 +14,33 @@ class GeminiService:
 
     def __init__(self):
         """Inicializa el servicio de Gemini"""
+        import os
+        
         api_key = os.getenv('GEMINI_API_KEY')
+        print(f"🔧 Inicializando GeminiService...")
+        print(f"🔑 API Key encontrada: {bool(api_key)}")
+        
         if not api_key:
             raise ValueError("GEMINI_API_KEY no está configurada en las variables de entorno")
+        
+        print(f"🔑 API Key length: {len(api_key)}")
+        print(f"🔑 API Key preview: {api_key[:15]}...")
 
-        genai.configure(api_key=api_key)
+        try:
+            genai.configure(api_key=api_key)
+            print(f"✅ Gemini configurado correctamente")
+        except Exception as e:
+            print(f"❌ Error al configurar Gemini: {str(e)}")
+            raise
+        
         # Usar Gemini 1.5 Pro - Modelo avanzado con mejor contexto y razonamiento
         # Gemini 1.5 Pro ofrece ventana de contexto de 2M tokens y mejor comprensión
-        self.model = genai.GenerativeModel('gemini-1.5-pro')
+        try:
+            self.model = genai.GenerativeModel('gemini-1.5-pro')
+            print(f"✅ Modelo gemini-1.5-pro cargado correctamente")
+        except Exception as e:
+            print(f"❌ Error al cargar modelo: {str(e)}")
+            raise
 
         # Contexto del sistema para RutaGO
         self.system_context = """
@@ -160,19 +179,28 @@ Recuerda: Estás aquí para hacer que la experiencia de descubrir Santiago sea m
 
         except Exception as e:
             error_msg = str(e)
-            print(f"Error al generar respuesta con Gemini: {error_msg}")
+            print(f"❌ Error al generar respuesta con Gemini: {error_msg}")
             
             # Log más detallado para debugging
             import traceback
+            print("📋 Traceback completo:")
             traceback.print_exc()
             
+            # Log de la API key (solo primeros caracteres para seguridad)
+            import os
+            api_key = os.getenv('GEMINI_API_KEY')
+            print(f"🔑 API Key configurada: {bool(api_key)}")
+            if api_key:
+                print(f"🔑 API Key preview: {api_key[:15]}...")
+                print(f"🔑 API Key length: {len(api_key)}")
+            
             # Mensaje de error más específico para el usuario
-            if "API key" in error_msg.lower() or "authentication" in error_msg.lower():
-                return "⚠️ Lo siento, hay un problema con la configuración del servicio. Por favor, contacta al administrador."
+            if "API key" in error_msg.lower() or "authentication" in error_msg.lower() or "invalid" in error_msg.lower():
+                return "⚠️ Hay un problema con la configuración de la API key. Por favor, verifica que sea válida en Google AI Studio."
             elif "quota" in error_msg.lower() or "limit" in error_msg.lower():
                 return "⚠️ El servicio está temporalmente saturado. Por favor, intenta de nuevo en unos minutos."
             else:
-                return "Lo siento, tuve un problema al procesar tu mensaje. ¿Podrías intentar de nuevo?"
+                return f"Lo siento, tuve un problema al procesar tu mensaje. Error: {error_msg[:100]}"
 
     def _build_prompt(self, user_message: str, conversation_history: list = None, businesses_context: list = None) -> str:
         """Construye el prompt completo con contexto e historial"""
