@@ -177,6 +177,8 @@ class BusinessOwnerProfileSerializer(serializers.ModelSerializer):
 
 
 class BusinessCreateSerializer(serializers.ModelSerializer):
+    category = serializers.SlugField(write_only=True)
+    
     class Meta:
         model = Business
         fields = [
@@ -185,6 +187,14 @@ class BusinessCreateSerializer(serializers.ModelSerializer):
             'phone', 'email', 'website', 'instagram',
             'cover_image', 'images', 'hours', 'price_range', 'features', 'tags'
         ]
+    
+    def validate_category(self, value):
+        """Validar y convertir slug de categoría a objeto Category"""
+        try:
+            category = Category.objects.get(slug=value, is_active=True)
+            return category
+        except Category.DoesNotExist:
+            raise serializers.ValidationError(f"Categoría '{value}' no encontrada")
     
     def create(self, validated_data):
         # Extraer ManyToMany antes de crear
