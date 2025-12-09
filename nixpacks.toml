@@ -7,8 +7,8 @@ cmds = [
   "cd backend && python3 -m pip install --break-system-packages -r requirements/production.txt"
 ]
 
-[phases.build]
-cmds = ["cd backend && python3 manage.py collectstatic --noinput"]
+# No ejecutar collectstatic en build (no tiene acceso a DATABASE_URL)
+# Se ejecutará en start.sh con todas las variables de entorno
 
 [start]
 cmd = "bash backend/start.sh"
