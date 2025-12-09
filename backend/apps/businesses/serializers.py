@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Business, Category, Feature, Tag, Favorite, Visit
+from .models import Business, Category, Feature, Tag, Favorite, Visit, BusinessOwnerProfile
 from math import radians, sin, cos, sqrt, atan2
 
 
@@ -157,3 +157,50 @@ class VisitSerializer(serializers.ModelSerializer):
         model = Visit
         fields = ['id', 'business', 'route', 'visited_at', 'notes']
         read_only_fields = ['id', 'visited_at']
+
+
+class BusinessOwnerProfileSerializer(serializers.ModelSerializer):
+    businesses_created_count = serializers.IntegerField(read_only=True)
+    can_create_more = serializers.BooleanField(read_only=True)
+    remaining_slots = serializers.ReadOnlyField()
+    
+    class Meta:
+        model = BusinessOwnerProfile
+        fields = [
+            'can_create_businesses',
+            'max_businesses_allowed',
+            'businesses_created_count',
+            'can_create_more',
+            'remaining_slots',
+            'is_verified_owner'
+        ]
+
+
+class BusinessCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Business
+        fields = [
+            'name', 'description', 'short_description', 'category',
+            'latitude', 'longitude', 'address', 'neighborhood', 'comuna',
+            'phone', 'email', 'website', 'instagram',
+            'cover_image', 'images', 'hours', 'price_range', 'features', 'tags'
+        ]
+    
+    def create(self, validated_data):
+        # Extraer ManyToMany antes de crear
+        features = validated_data.pop('features', [])
+        tags = validated_data.pop('tags', [])
+        
+        # Crear negocio
+        business = Business.objects.create(
+            **validated_data,
+            owner=self.context['request'].user,
+            created_by_owner=True,
+            status='pending_review'
+        )
+        
+        # Agregar relaciones
+        business.features.set(features)
+        business.tags.set(tags)
+        
+        return business

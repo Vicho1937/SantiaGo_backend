@@ -5,10 +5,11 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticate
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django.db.models import Q
-from .models import Business, Category, Feature, Favorite, Visit
+from .models import Business, Category, Feature, Favorite, Visit, BusinessOwnerProfile
 from .serializers import (
     BusinessListSerializer, BusinessDetailSerializer,
-    CategorySerializer, FeatureSerializer, FavoriteSerializer, VisitSerializer
+    CategorySerializer, FeatureSerializer, FavoriteSerializer, VisitSerializer,
+    BusinessOwnerProfileSerializer, BusinessCreateSerializer
 )
 
 
@@ -28,7 +29,7 @@ class BusinessListView(generics.ListAPIView):
     ordering_fields = ['rating', 'review_count', 'created_at']
     
     def get_queryset(self):
-        queryset = Business.objects.filter(is_active=True).select_related('category').prefetch_related('features')
+        queryset = Business.objects.filter(is_active=True, status='published').select_related('category').prefetch_related('features')
         
         # Filtro por categoría
         category = self.request.query_params.get('category')
@@ -221,3 +222,76 @@ def register_visit(request, business_id):
 
 # Import models for F expressions
 from django.db import models
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def owner_profile(request):
+    """Obtener perfil de propietario del usuario actual"""
+    profile, created = BusinessOwnerProfile.objects.get_or_create(user=request.user)
+    serializer = BusinessOwnerProfileSerializer(profile)
+    return Response(serializer.data)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_my_business(request):
+    """Crear un negocio (solo usuarios con permisos)"""
+    profile, created = BusinessOwnerProfile.objects.get_or_create(user=request.user)
+    
+    if not profile.can_create_more:
+        return Response({
+            'error': 'No tienes permiso para crear más negocios',
+            'max_allowed': profile.max_businesses_allowed,
+            'created': profile.businesses_created_count
+        }, status=status.HTTP_403_FORBIDDEN)
+    
+    serializer = BusinessCreateSerializer(data=request.data, context={'request': request})
+    if serializer.is_valid():
+        business = serializer.save()
+        return Response({
+            'message': 'Negocio creado exitosamente. Está pendiente de revisión.',
+            'business': BusinessDetailSerializer(business).data
+        }, status=status.HTTP_201_CREATED)
+    
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def my_businesses(request):
+    """Listar todos mis negocios"""
+    businesses = Business.objects.filter(owner=request.user, created_by_owner=True)
+    serializer = BusinessListSerializer(businesses, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def my_business_dashboard(request, business_id):
+    """Dashboard con estadísticas de mi negocio"""
+    try:
+        business = Business.objects.get(id=business_id, owner=request.user)
+    except Business.DoesNotExist:
+        return Response({'error': 'Negocio no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+    
+    from apps.reviews.models import Review
+    recent_reviews = Review.objects.filter(business=business, is_approved=True).order_by('-created_at')[:5]
+    
+    return Response({
+        'business': BusinessDetailSerializer(business).data,
+        'stats': {
+            'views': business.views,
+            'rating': float(business.rating),
+            'review_count': business.review_count,
+            'favorites_count': business.favorites_count,
+            'visits_count': business.visits_count,
+            'status': business.status,
+        },
+        'recent_reviews': [{
+            'user': review.user.email,
+            'rating': review.rating,
+            'comment': review.comment,
+            'created_at': review.created_at
+        } for review in recent_reviews]
+    })
