@@ -1,6 +1,7 @@
 """
 Vistas para gestión de media (imágenes)
 """
+from django.conf import settings
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, parser_classes
 from rest_framework.permissions import IsAuthenticated
