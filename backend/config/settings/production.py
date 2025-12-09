@@ -11,12 +11,17 @@ DEBUG = False
 
 SECRET_KEY = env('SECRET_KEY')
 
-ALLOWED_HOSTS = [
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[
     '.railway.app',
     '.render.com',
     'rutago-nine.vercel.app',
     '.vercel.app',
-]
+])
+
+# CSRF Configuration (CRÍTICO para admin y formularios POST)
+CSRF_TRUSTED_ORIGINS = env.list('CSRF_TRUSTED_ORIGINS', default=[
+    'https://rutago-nine.vercel.app',
+])
 
 # HTTPS/Security
 SECURE_SSL_REDIRECT = True
@@ -27,9 +32,9 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
 
 # CORS Configuration (CRÍTICO para frontend en Vercel)
-CORS_ALLOWED_ORIGINS = [
+CORS_ALLOWED_ORIGINS = env.list('CORS_ALLOWED_ORIGINS', default=[
     'https://rutago-nine.vercel.app',
-]
+])
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = [
     'accept',
