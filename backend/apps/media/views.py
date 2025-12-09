@@ -105,8 +105,12 @@ def upload_business_photo_temp(request):
         }, status=status.HTTP_200_OK)
     
     except Exception as e:
+        import traceback
+        error_detail = traceback.format_exc()
+        print(f"❌ Error uploading business photo: {error_detail}")
         return Response({
             'error': str(e),
+            'error_detail': error_detail if settings.DEBUG else None,
             'success': False
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
