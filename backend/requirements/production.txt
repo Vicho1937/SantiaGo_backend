@@ -13,8 +13,8 @@ whitenoise==6.6.0
 # Environment variables
 python-decouple==3.8
 
-# Monitoring
-sentry-sdk==1.39.2
+# Monitoring (ya incluido en base.txt con Django integration)
+# sentry-sdk[django]==2.18.0
 
 # Performance
 django-redis==5.4.0
