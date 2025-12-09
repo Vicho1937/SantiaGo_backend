@@ -65,6 +65,55 @@ def upload_profile_picture(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @parser_classes([MultiPartParser, FormParser])
+def upload_business_photo_temp(request):
+    """
+    Endpoint para subir fotos temporales de negocios (antes de crear el negocio)
+    
+    Body (multipart/form-data):
+    - image: archivo de imagen
+    """
+    serializer = BusinessPhotoUploadSerializer(data=request.data)
+    
+    if not serializer.is_valid():
+        return Response({
+            'error': serializer.errors,
+            'success': False
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        cloudinary_service = get_cloudinary_service()
+        image_file = serializer.validated_data['image']
+        
+        # Subir imagen a Cloudinary con un identificador temporal
+        import uuid
+        temp_id = str(uuid.uuid4())
+        result = cloudinary_service.upload_business_photo(
+            file=image_file,
+            business_id=temp_id,
+            photo_index=0
+        )
+        
+        return Response({
+            'success': True,
+            'message': 'Imagen subida correctamente',
+            'data': {
+                'url': result['url'],
+                'thumbnail_url': result['thumbnail_url'],
+                'small_thumbnail_url': result.get('small_thumbnail_url'),
+                'public_id': result['public_id']
+            }
+        }, status=status.HTTP_200_OK)
+    
+    except Exception as e:
+        return Response({
+            'error': str(e),
+            'success': False
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@parser_classes([MultiPartParser, FormParser])
 def upload_business_photo(request, business_id):
     """
     Endpoint para subir fotos de un negocio
