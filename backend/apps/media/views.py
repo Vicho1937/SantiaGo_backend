@@ -111,7 +111,7 @@ def upload_business_photo_temp(request):
         print(f"❌ Error uploading business photo: {error_detail}")
         return Response({
             'error': str(e),
-            'error_detail': error_detail if settings.DEBUG else None,
+            'error_detail': error_detail,  # Siempre mostrar el error para debugging
             'success': False
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
