@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 from pathlib import Path
 import environ
 from datetime import timedelta
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -197,3 +199,35 @@ SENDGRID_API_KEY = env('SENDGRID_API_KEY', default='')
 DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='noreply@rutalocal.com')
 SENTRY_DSN = env('SENTRY_DSN', default='')
 FRONTEND_URL = env('FRONTEND_URL', default='http://localhost:3000')
+
+# ===========================================
+# SENTRY ERROR TRACKING
+# ===========================================
+if SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[
+            DjangoIntegration(
+                transaction_style='url',
+                middleware_spans=True,
+                signals_spans=True,
+            ),
+        ],
+        # Performance Monitoring
+        traces_sample_rate=0.1,  # Captura 10% de transacciones
+
+        # Profiling (opcional)
+        # profiles_sample_rate=0.1,
+
+        # Environment
+        environment='production' if not DEBUG else 'development',
+
+        # Release tracking
+        release=env('RAILWAY_GIT_COMMIT_SHA', default='local-dev'),
+
+        # Opciones de privacidad
+        send_default_pii=False,  # No enviar datos personales
+
+        # Filtros
+        before_send=lambda event, hint: None if DEBUG else event,  # No enviar en desarrollo local
+    )
