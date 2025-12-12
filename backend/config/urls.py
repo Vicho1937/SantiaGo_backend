@@ -17,14 +17,23 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from django.http import JsonResponse
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 from apps.authentication.urls import user_urlpatterns
 
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def api_root(request):
-    """API root endpoint - muestra endpoints disponibles"""
-    return JsonResponse({
+    """API root endpoint - muestra endpoints disponibles (requiere autenticación)"""
+    return Response({
         'message': 'Ruta Local API',
         'version': '1.0',
+        'user': {
+            'email': request.user.email,
+            'username': request.user.username,
+        },
         'endpoints': {
             'auth': {
                 'login': '/api/auth/login/',
