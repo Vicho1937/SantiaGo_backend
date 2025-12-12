@@ -20,6 +20,7 @@ from django.http import JsonResponse
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from apps.authentication.urls import user_urlpatterns
 
 
@@ -60,6 +61,10 @@ urlpatterns = [
 
     # DRF Browsable API Login (para la interfaz web de DRF)
     path('api-auth/', include('rest_framework.urls')),
+
+    # JWT Token endpoints (punto de entrada principal para autenticación)
+    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
     # API root
     path('api/', api_root, name='api-root'),
