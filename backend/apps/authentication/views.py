@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils import timezone
+from django.conf import settings
 from .models import User
 from .serializers import RegisterSerializer, LoginSerializer, UserSerializer, GoogleAuthSerializer
 
@@ -11,9 +12,15 @@ from .serializers import RegisterSerializer, LoginSerializer, UserSerializer, Go
 def get_tokens_for_user(user):
     """Genera tokens JWT para un usuario"""
     refresh = RefreshToken.for_user(user)
+
+    # Obtener el tiempo de expiración del access token desde settings
+    access_token_lifetime = settings.SIMPLE_JWT.get('ACCESS_TOKEN_LIFETIME')
+    expires_in = int(access_token_lifetime.total_seconds()) if access_token_lifetime else 3600
+
     return {
         'refresh': str(refresh),
         'access': str(refresh.access_token),
+        'expires_in': expires_in,
     }
 
 
@@ -33,7 +40,7 @@ def register_view(request):
                 'accessToken': tokens['access'],
                 'refreshToken': tokens['refresh'],
                 'tokenType': 'Bearer',
-                'expiresIn': 900
+                'expiresIn': tokens['expires_in']
             }
         }, status=status.HTTP_201_CREATED)
 
@@ -63,7 +70,7 @@ def login_view(request):
                 'accessToken': tokens['access'],
                 'refreshToken': tokens['refresh'],
                 'tokenType': 'Bearer',
-                'expiresIn': 900
+                'expiresIn': tokens['expires_in']
             }
         }, status=status.HTTP_200_OK)
 

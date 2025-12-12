@@ -16,10 +16,41 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.http import JsonResponse
 from apps.authentication.urls import user_urlpatterns
+
+
+def api_root(request):
+    """API root endpoint - muestra endpoints disponibles"""
+    return JsonResponse({
+        'message': 'Ruta Local API',
+        'version': '1.0',
+        'endpoints': {
+            'auth': {
+                'login': '/api/auth/login/',
+                'register': '/api/auth/register/',
+                'logout': '/api/auth/logout/',
+                'me': '/api/auth/me/',
+                'refresh': '/api/auth/refresh/',
+                'google': '/api/auth/google/',
+            },
+            'users': {
+                'profile': '/api/users/profile/',
+                'preferences': '/api/users/preferences/',
+                'privacy': '/api/users/privacy/',
+            },
+            'businesses': '/api/businesses/',
+            'routes': '/api/routes/',
+            'ai': '/api/ai/',
+            'media': '/api/media/',
+        }
+    })
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+
+    # API root
+    path('api/', api_root, name='api-root'),
 
     # API endpoints
     path('api/auth/', include('apps.authentication.urls')),
@@ -27,6 +58,6 @@ urlpatterns = [
     path('api/ai/', include('apps.ai_assistant.urls')),  # AI Assistant - RutaGO chatbot
     path('api/businesses/', include('apps.businesses.urls')),  # Includes categories endpoint
     path('api/routes/', include('apps.routes.urls')),
-    path('api/', include('apps.reviews.urls')),  # Reviews endpoints include business_id in path
+    path('api/reviews/', include('apps.reviews.urls')),  # Reviews endpoints
     path('api/media/', include('apps.media.urls')),  # Media uploads (Cloudinary)
 ]
