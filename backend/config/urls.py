@@ -49,6 +49,9 @@ def api_root(request):
 urlpatterns = [
     path('admin/', admin.site.urls),
 
+    # DRF Browsable API Login (para la interfaz web de DRF)
+    path('api-auth/', include('rest_framework.urls')),
+
     # API root
     path('api/', api_root, name='api-root'),
 
