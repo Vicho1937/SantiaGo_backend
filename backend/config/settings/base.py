@@ -203,6 +203,10 @@ DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='noreply@rutalocal.com')
 SENTRY_DSN = env('SENTRY_DSN', default='')
 FRONTEND_URL = env('FRONTEND_URL', default='http://localhost:3000')
 
+# Supabase Auth
+SUPABASE_URL = env('SUPABASE_URL', default='')
+SUPABASE_JWT_SECRET = env('SUPABASE_JWT_SECRET', default='')
+
 # ===========================================
 # SENTRY ERROR TRACKING
 # ===========================================

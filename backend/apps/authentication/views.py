@@ -5,8 +5,10 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils import timezone
 from django.conf import settings
+from django.db import transaction
 from .models import User
-from .serializers import RegisterSerializer, LoginSerializer, UserSerializer, GoogleAuthSerializer
+from .serializers import RegisterSerializer, LoginSerializer, UserSerializer, GoogleAuthSerializer, SupabaseAuthSerializer
+from core.supabase_auth import SupabaseJWTValidator
 
 
 def get_tokens_for_user(user):
@@ -112,20 +114,102 @@ def me_view(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def google_auth_view(request):
-    """Login con Google OAuth"""
-    serializer = GoogleAuthSerializer(data=request.data)
+    """
+    Login/Registro con Google OAuth a través de Supabase
 
-    if serializer.is_valid():
-        # TODO: Implementar validación con Google OAuth
+    Flujo:
+    1. Frontend autentica con Supabase usando signInWithOAuth('google')
+    2. Supabase devuelve un access_token JWT al frontend
+    3. Frontend envía el access_token a este endpoint
+    4. Backend valida el token con el JWT Secret de Supabase
+    5. Backend crea o actualiza el usuario en Django
+    6. Backend devuelve tokens JWT propios de Django
+    """
+    serializer = SupabaseAuthSerializer(data=request.data)
+
+    if not serializer.is_valid():
         return Response({
             'success': False,
-            'message': 'Autenticación con Google no implementada aún'
-        }, status=status.HTTP_501_NOT_IMPLEMENTED)
+            'errors': serializer.errors,
+            'message': 'Datos inválidos'
+        }, status=status.HTTP_400_BAD_REQUEST)
 
-    return Response({
-        'success': False,
-        'errors': serializer.errors
-    }, status=status.HTTP_400_BAD_REQUEST)
+    access_token = serializer.validated_data['access_token']
+
+    # Validar el token de Supabase y extraer datos del usuario
+    user_data = SupabaseJWTValidator.get_user_data(access_token)
+
+    if not user_data:
+        return Response({
+            'success': False,
+            'message': 'Token de Supabase inválido o expirado'
+        }, status=status.HTTP_401_UNAUTHORIZED)
+
+    # Extraer datos específicos de Google
+    google_data = SupabaseJWTValidator.extract_google_data(user_data)
+
+    email = google_data.get('email')
+    if not email:
+        return Response({
+            'success': False,
+            'message': 'No se pudo obtener el email del usuario'
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    # Crear o actualizar usuario en Django
+    try:
+        with transaction.atomic():
+            user, created = User.objects.get_or_create(
+                email=email,
+                defaults={
+                    'username': email.split('@')[0],
+                    'first_name': google_data.get('first_name', ''),
+                    'last_name': google_data.get('last_name', ''),
+                    'google_id': google_data.get('google_id', ''),
+                    'avatar': google_data.get('avatar_url') or google_data.get('picture', ''),
+                }
+            )
+
+            # Si el usuario ya existe, actualizar datos de Google
+            if not created:
+                # Solo actualizar si los campos están vacíos o si los datos de Google son más completos
+                if not user.google_id and google_data.get('google_id'):
+                    user.google_id = google_data.get('google_id')
+
+                if not user.first_name and google_data.get('first_name'):
+                    user.first_name = google_data.get('first_name')
+
+                if not user.last_name and google_data.get('last_name'):
+                    user.last_name = google_data.get('last_name')
+
+                # Actualizar avatar si cambió
+                new_avatar = google_data.get('avatar_url') or google_data.get('picture', '')
+                if new_avatar and user.avatar != new_avatar:
+                    user.avatar = new_avatar
+
+                user.last_login_at = timezone.now()
+                user.save()
+
+            # Generar tokens JWT de Django para el usuario
+            tokens = get_tokens_for_user(user)
+
+            return Response({
+                'success': True,
+                'message': 'Autenticación exitosa' if not created else 'Usuario creado exitosamente',
+                'user': UserSerializer(user).data,
+                'tokens': {
+                    'accessToken': tokens['access'],
+                    'refreshToken': tokens['refresh'],
+                    'tokenType': 'Bearer',
+                    'expiresIn': tokens['expires_in']
+                },
+                'isNewUser': created
+            }, status=status.HTTP_200_OK if not created else status.HTTP_201_CREATED)
+
+    except Exception as e:
+        return Response({
+            'success': False,
+            'message': f'Error al crear/actualizar usuario: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['PATCH'])

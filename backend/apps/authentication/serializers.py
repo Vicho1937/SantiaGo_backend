@@ -134,3 +134,15 @@ class LoginSerializer(serializers.Serializer):
 class GoogleAuthSerializer(serializers.Serializer):
     """Serializer para autenticación con Google"""
     token = serializers.CharField(required=True)
+
+
+class SupabaseAuthSerializer(serializers.Serializer):
+    """
+    Serializer para autenticación con Supabase
+    Recibe el access_token de Supabase y opcionalmente los datos del usuario
+    """
+    access_token = serializers.CharField(required=True, help_text="Access token de Supabase Auth")
+    refresh_token = serializers.CharField(required=False, help_text="Refresh token de Supabase Auth")
+
+    # Datos opcionales del usuario (pueden venir del frontend)
+    user_data = serializers.DictField(required=False, help_text="Datos del usuario de Supabase")
