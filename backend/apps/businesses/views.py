@@ -286,10 +286,10 @@ def my_business_dashboard(request, business_id):
         business = Business.objects.get(id=business_id, owner=request.user)
     except Business.DoesNotExist:
         return Response({'error': 'Negocio no encontrado'}, status=status.HTTP_404_NOT_FOUND)
-    
+
     from apps.reviews.models import Review
     recent_reviews = Review.objects.filter(business=business, is_approved=True).order_by('-created_at')[:5]
-    
+
     return Response({
         'business': BusinessDetailSerializer(business).data,
         'stats': {
@@ -307,3 +307,69 @@ def my_business_dashboard(request, business_id):
             'created_at': review.created_at
         } for review in recent_reviews]
     })
+
+
+@api_view(['PATCH', 'PUT'])
+@permission_classes([IsAuthenticated])
+def update_my_business(request, business_id):
+    """
+    Actualizar información de mi negocio.
+    Solo el propietario puede actualizar su negocio.
+    """
+    try:
+        business = Business.objects.get(id=business_id, owner=request.user, created_by_owner=True)
+    except Business.DoesNotExist:
+        return Response({
+            'success': False,
+            'error': 'Negocio no encontrado o no tienes permisos para editarlo'
+        }, status=status.HTTP_404_NOT_FOUND)
+
+    # Campos permitidos para actualización
+    allowed_fields = [
+        'name', 'description', 'short_description', 'address', 'neighborhood',
+        'comuna', 'phone', 'email', 'website', 'instagram', 'latitude', 'longitude',
+        'hours', 'is_open_24h', 'price_range', 'cover_image', 'images', 'logo'
+    ]
+
+    # Actualizar solo los campos proporcionados
+    for field in allowed_fields:
+        if field in request.data:
+            setattr(business, field, request.data[field])
+
+    # Manejar category si viene como slug
+    if 'category' in request.data:
+        try:
+            if isinstance(request.data['category'], str):
+                # Si viene como slug, buscar la categoría
+                from .models import Category
+                category = Category.objects.get(slug=request.data['category'])
+                business.category = category
+            else:
+                # Si viene como ID, asignar directamente
+                business.category_id = request.data['category']
+        except Category.DoesNotExist:
+            return Response({
+                'success': False,
+                'error': f"Categoría '{request.data['category']}' no encontrada"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+    # Manejar features (ManyToMany)
+    if 'features' in request.data:
+        business.features.set(request.data['features'])
+
+    # Manejar tags (ManyToMany)
+    if 'tags' in request.data:
+        business.tags.set(request.data['tags'])
+
+    try:
+        business.save()
+        return Response({
+            'success': True,
+            'message': 'Negocio actualizado exitosamente',
+            'business': BusinessDetailSerializer(business).data
+        }, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_400_BAD_REQUEST)

@@ -18,5 +18,6 @@ urlpatterns = [
     path('owner/profile/', views.owner_profile, name='owner-profile'),
     path('owner/my-businesses/', views.my_businesses, name='my-businesses'),
     path('owner/my-businesses/create/', views.create_my_business, name='create-my-business'),
+    path('owner/my-businesses/<uuid:business_id>/', views.update_my_business, name='update-my-business'),
     path('owner/my-businesses/<uuid:business_id>/dashboard/', views.my_business_dashboard, name='my-business-dashboard'),
 ]
