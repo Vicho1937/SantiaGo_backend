@@ -77,6 +77,39 @@ class ReviewListView(generics.ListAPIView):
         })
 
 
+class MyReviewsView(generics.ListAPIView):
+    """Listar reviews del usuario autenticado"""
+    serializer_class = ReviewSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        return Review.objects.filter(
+            user=self.request.user
+        ).select_related('user', 'business').order_by('-created_at')
+    
+    def list(self, request, *args, **kwargs):
+        reviews = self.get_queryset()
+        
+        # Paginar resultados
+        page = self.paginate_queryset(reviews)
+        
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return Response({
+                'success': True,
+                'data': {
+                    'results': serializer.data,
+                    'total': reviews.count()
+                }
+            })
+        
+        serializer = self.get_serializer(reviews, many=True)
+        return Response({
+            'success': True,
+            'data': serializer.data
+        })
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def create_review(request, business_id):

@@ -4,6 +4,7 @@ from . import views
 app_name = 'reviews'
 
 urlpatterns = [
+    path('my-reviews/', views.MyReviewsView.as_view(), name='my-reviews'),
     path('businesses/<uuid:business_id>/reviews/', views.ReviewListView.as_view(), name='review-list'),
     path('businesses/<uuid:business_id>/reviews/create/', views.create_review, name='review-create'),
     path('reviews/<uuid:review_id>/update/', views.update_review, name='review-update'),
