@@ -16,12 +16,13 @@ class Command(BaseCommand):
         dry_run = options['dry_run']
         
         # Mapeo de negocios a nuevas imágenes de alta calidad
+        # Cada imagen es específica para el tipo de negocio
         image_mapping = {
-            'Café Literario': 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=1200&q=85&fit=crop',
-            'Librería Catalonia': 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=1200&q=85&fit=crop',
-            'Patio Bellavista': 'https://images.unsplash.com/photo-1555400082-89f07be8007c?w=1200&q=85&fit=crop',
-            'Galería Artespacio': 'https://images.unsplash.com/photo-1561214115-f2f134cc4912?w=1200&q=85&fit=crop',
-            'Bar The Clinic': 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=1200&q=85&fit=crop',
+            'Café Literario': 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=1200&q=85&fit=crop',  # Café con libros
+            'Librería Catalonia': 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=1200&q=85&fit=crop',  # Estanterías de librería
+            'Patio Bellavista': 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&q=85&fit=crop',  # Restaurante con terraza
+            'Galería Artespacio': 'https://images.unsplash.com/photo-1578926078395-62e0347a30b5?w=1200&q=85&fit=crop',  # Galería de arte moderna
+            'Bar The Clinic': 'https://images.unsplash.com/photo-1572116469696-31de0f17cc34?w=1200&q=85&fit=crop',  # Bar moderno con luces
         }
         
         updated_count = 0
