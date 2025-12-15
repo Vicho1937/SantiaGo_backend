@@ -1,7 +1,7 @@
 from rest_framework import generics, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated, AllowAny
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django.db.models import Q
@@ -574,3 +574,126 @@ def reverse_geocode(request):
             'success': False,
             'error': 'Error interno al obtener la dirección. Por favor intenta nuevamente.'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# ==================== ANALYTICS ENDPOINTS ====================
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def track_business_view(request, business_id):
+    """Track view of a business profile (anonymous)"""
+    from .models import BusinessView
+    
+    try:
+        business = Business.objects.get(id=business_id, is_active=True)
+    except Business.DoesNotExist:
+        return Response({'success': False}, status=status.HTTP_404_NOT_FOUND)
+    
+    # Create view record
+    BusinessView.objects.create(
+        business=business,
+        session_key=request.session.session_key if hasattr(request, 'session') else None,
+        ip_address=request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR', '')).split(',')[0].strip(),
+        user_agent=request.META.get('HTTP_USER_AGENT', '')[:500]
+    )
+    
+    # Update total views counter
+    Business.objects.filter(id=business_id).update(views=models.F('views') + 1)
+    
+    return Response({'success': True, 'message': 'View tracked'})
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_business_analytics(request, business_id):
+    """Get analytics data for business dashboard"""
+    from .models import BusinessView, Favorite
+    from apps.reviews.models import Review
+    from django.db.models import Count
+    from django.db.models.functions import TruncDate
+    from datetime import datetime, timedelta
+    
+    try:
+        business = Business.objects.get(id=business_id, owner=request.user)
+    except Business.DoesNotExist:
+        return Response({'error': 'Negocio no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+    
+    # Date range (last 7 days)
+    end_date = datetime.now().date()
+    start_date = end_date - timedelta(days=6)
+    
+    # Views per day
+    views_by_day = (
+        BusinessView.objects
+        .filter(business=business, viewed_at__date__gte=start_date)
+        .annotate(date=TruncDate('viewed_at'))
+        .values('date')
+        .annotate(count=Count('id'))
+        .order_by('date')
+    )
+    
+    # Favorites per day
+    favorites_by_day = (
+        Favorite.objects
+        .filter(business=business, created_at__date__gte=start_date)
+        .annotate(date=TruncDate('created_at'))
+        .values('date')
+        .annotate(count=Count('id'))
+        .order_by('date')
+    )
+    
+    # Reviews per day
+    reviews_by_day = (
+        Review.objects
+        .filter(business=business, created_at__date__gte=start_date, is_approved=True)
+        .annotate(date=TruncDate('created_at'))
+        .values('date')
+        .annotate(count=Count('id'))
+        .order_by('date')
+    )
+    
+    # Rating distribution
+    rating_distribution = (
+        Review.objects
+        .filter(business=business, is_approved=True)
+        .values('rating')
+        .annotate(count=Count('id'))
+        .order_by('-rating')
+    )
+    
+    # Build daily data for chart
+    daily_data = []
+    days_es = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
+    
+    views_dict = {v['date']: v['count'] for v in views_by_day}
+    favorites_dict = {f['date']: f['count'] for f in favorites_by_day}
+    reviews_dict = {r['date']: r['count'] for r in reviews_by_day}
+    
+    for i in range(7):
+        day = start_date + timedelta(days=i)
+        daily_data.append({
+            'date': day.isoformat(),
+            'day': days_es[day.weekday()],
+            'views': views_dict.get(day, 0),
+            'likes': favorites_dict.get(day, 0),
+            'reviews': reviews_dict.get(day, 0),
+        })
+    
+    # Rating distribution formatted
+    rating_dist = {str(i): 0 for i in range(1, 6)}
+    for r in rating_distribution:
+        rating_dist[str(r['rating'])] = r['count']
+    
+    return Response({
+        'success': True,
+        'data': {
+            'daily_activity': daily_data,
+            'rating_distribution': rating_dist,
+            'totals': {
+                'views': business.views,
+                'favorites': business.favorites_count,
+                'reviews': business.review_count,
+                'rating': float(business.rating),
+            }
+        }
+    })

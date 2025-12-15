@@ -285,3 +285,22 @@ class BusinessOwnerProfile(models.Model):
         if self.max_businesses_allowed == -1:
             return "Ilimitado"
         return max(0, self.max_businesses_allowed - self.businesses_created_count)
+
+
+class BusinessView(models.Model):
+    """Tracking de vistas de perfil de negocio (anónimo)"""
+    business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name='profile_views')
+    viewed_at = models.DateTimeField(auto_now_add=True)
+    session_key = models.CharField(max_length=40, blank=True, null=True)
+    ip_address = models.GenericIPAddressField(blank=True, null=True)
+    user_agent = models.CharField(max_length=500, blank=True)
+    
+    class Meta:
+        db_table = 'business_views'
+        ordering = ['-viewed_at']
+        indexes = [
+            models.Index(fields=['business', 'viewed_at']),
+        ]
+    
+    def __str__(self):
+        return f"Vista de {self.business.name} - {self.viewed_at}"

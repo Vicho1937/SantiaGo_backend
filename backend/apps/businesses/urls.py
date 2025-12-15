@@ -18,10 +18,14 @@ urlpatterns = [
     path('<uuid:business_id>/unfavorite/', views.unfavorite_business, name='unfavorite-business'),
     path('<uuid:business_id>/visit/', views.register_visit, name='register-visit'),
     
+    # Analytics (public tracking)
+    path('<uuid:business_id>/track-view/', views.track_business_view, name='track-view'),
+    
     # Owner endpoints
     path('owner/profile/', views.owner_profile, name='owner-profile'),
     path('owner/my-businesses/', views.my_businesses, name='my-businesses'),
     path('owner/my-businesses/create/', views.create_my_business, name='create-my-business'),
     path('owner/my-businesses/<uuid:business_id>/', views.update_my_business, name='update-my-business'),
     path('owner/my-businesses/<uuid:business_id>/dashboard/', views.my_business_dashboard, name='my-business-dashboard'),
+    path('owner/my-businesses/<uuid:business_id>/analytics/', views.get_business_analytics, name='business-analytics'),
 ]
