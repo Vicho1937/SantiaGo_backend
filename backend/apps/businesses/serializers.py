@@ -178,7 +178,9 @@ class BusinessOwnerProfileSerializer(serializers.ModelSerializer):
 
 class BusinessCreateSerializer(serializers.ModelSerializer):
     category = serializers.SlugField(write_only=True)
-    
+    latitude = serializers.DecimalField(max_digits=9, decimal_places=6, required=False, allow_null=True)
+    longitude = serializers.DecimalField(max_digits=9, decimal_places=6, required=False, allow_null=True)
+
     class Meta:
         model = Business
         fields = [
@@ -187,7 +189,7 @@ class BusinessCreateSerializer(serializers.ModelSerializer):
             'phone', 'email', 'website', 'instagram',
             'cover_image', 'images', 'hours', 'price_range', 'features', 'tags'
         ]
-    
+
     def validate_category(self, value):
         """Validar y convertir slug de categoría a objeto Category"""
         try:
@@ -195,6 +197,100 @@ class BusinessCreateSerializer(serializers.ModelSerializer):
             return category
         except Category.DoesNotExist:
             raise serializers.ValidationError(f"Categoría '{value}' no encontrada")
+
+    def validate(self, data):
+        """
+        Validación completa de datos del negocio
+
+        Funcionalidades:
+        1. Valida que la dirección sea correcta
+        2. Auto-geocodifica si no hay coordenadas
+        3. Valida que las coordenadas estén en Santiago
+        4. Normaliza datos de ubicación
+        """
+        from .services.geocoding_service import GeocodingService, GeocodingError
+        from .validators import (
+            AddressValidator,
+            SantiagoLocationValidator,
+            BusinessLocationValidator
+        )
+        from django.core.exceptions import ValidationError as DjangoValidationError
+
+        address = data.get('address')
+        latitude = data.get('latitude')
+        longitude = data.get('longitude')
+        comuna = data.get('comuna')
+
+        # Validar que la dirección esté presente
+        if not address:
+            raise serializers.ValidationError({
+                'address': 'La dirección es requerida'
+            })
+
+        # Validar formato de dirección
+        try:
+            AddressValidator.validate_address(address)
+        except DjangoValidationError as e:
+            raise serializers.ValidationError({
+                'address': str(e)
+            })
+
+        # Si no hay coordenadas, intentar geocodificar automáticamente
+        if not latitude or not longitude:
+            try:
+                # Preparar dirección completa para geocodificación
+                full_address = BusinessLocationValidator.prepare_for_geocoding(
+                    address,
+                    comuna
+                )
+
+                # Geocodificar usando Mapbox
+                geocoding_service = GeocodingService()
+                result = geocoding_service.geocode_address(full_address)
+
+                # Actualizar datos con coordenadas geocodificadas
+                data['latitude'] = result.latitude
+                data['longitude'] = result.longitude
+
+                # Actualizar datos de ubicación con información de Mapbox
+                if not data.get('neighborhood') and result.neighborhood:
+                    data['neighborhood'] = result.neighborhood
+                if not data.get('comuna') and result.comuna:
+                    data['comuna'] = result.comuna
+
+                # Normalizar dirección
+                data['address'] = AddressValidator.normalize_address(address)
+
+            except GeocodingError as e:
+                raise serializers.ValidationError({
+                    'address': (
+                        f'No se pudo geocodificar la dirección. '
+                        f'Por favor verifica que sea una dirección válida en Santiago, Chile. '
+                        f'Error: {str(e)}'
+                    )
+                })
+            except Exception as e:
+                # Si falla la geocodificación, requerir coordenadas manuales
+                raise serializers.ValidationError({
+                    'coordinates': (
+                        'No se pudo obtener coordenadas automáticamente. '
+                        'Por favor proporciona latitud y longitud manualmente.'
+                    )
+                })
+        else:
+            # Si se proveen coordenadas, validarlas
+            try:
+                # Validar que las coordenadas estén en Santiago
+                SantiagoLocationValidator.validate_location(
+                    float(latitude),
+                    float(longitude)
+                )
+            except DjangoValidationError as e:
+                raise serializers.ValidationError({
+                    'coordinates': str(e)
+                })
+
+        return data
     
     def create(self, validated_data):
         # Extraer ManyToMany antes de crear

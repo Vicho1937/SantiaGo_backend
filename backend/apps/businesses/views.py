@@ -398,3 +398,179 @@ def update_my_business(request, business_id):
             'success': False,
             'error': str(e)
         }, status=status.HTTP_400_BAD_REQUEST)
+
+
+# ==================== GEOCODIFICACIÓN ====================
+
+
+@api_view(['POST'])
+def geocode_address(request):
+    """
+    Geocodificar una dirección usando Mapbox API
+
+    Endpoint público que convierte una dirección de texto a coordenadas geográficas.
+    Útil para validar direcciones antes de crear/editar negocios.
+
+    POST /api/businesses/geocode/
+    Body:
+    {
+        "address": "Lastarria 305",
+        "comuna": "Santiago Centro",  // opcional
+        "city": "Santiago, Chile"      // opcional, default: "Santiago, Chile"
+    }
+
+    Response (200 OK):
+    {
+        "success": true,
+        "data": {
+            "latitude": -33.437198,
+            "longitude": -70.638956,
+            "formatted_address": "Lastarria 305, Santiago Centro, Santiago, Chile",
+            "neighborhood": "Lastarria",
+            "comuna": "Santiago Centro",
+            "city": "Santiago",
+            "country": "Chile",
+            "confidence": 0.95
+        }
+    }
+
+    Response (400 Bad Request):
+    {
+        "success": false,
+        "error": "No se pudo geocodificar la dirección: ..."
+    }
+    """
+    from .services.geocoding_service import GeocodingService, GeocodingError
+    from .validators import BusinessLocationValidator
+
+    address = request.data.get('address')
+    comuna = request.data.get('comuna')
+    city = request.data.get('city', 'Santiago, Chile')
+
+    if not address:
+        return Response({
+            'success': False,
+            'error': 'El campo "address" es requerido'
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        # Preparar dirección completa para geocodificación
+        full_address = BusinessLocationValidator.prepare_for_geocoding(address, comuna)
+
+        # Geocodificar usando el servicio
+        service = GeocodingService()
+        result = service.geocode_address(full_address, city=city)
+
+        return Response({
+            'success': True,
+            'data': result.to_dict()
+        }, status=status.HTTP_200_OK)
+
+    except GeocodingError as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        # Log error para debugging
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error inesperado en geocode_address: {str(e)}", exc_info=True)
+
+        return Response({
+            'success': False,
+            'error': 'Error interno al geocodificar la dirección. Por favor intenta nuevamente.'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+def reverse_geocode(request):
+    """
+    Reverse geocoding: Obtener dirección desde coordenadas
+
+    Endpoint público que convierte coordenadas a dirección.
+    Útil para cuando el usuario selecciona una ubicación en el mapa.
+
+    POST /api/businesses/reverse-geocode/
+    Body:
+    {
+        "latitude": -33.437198,
+        "longitude": -70.638956
+    }
+
+    Response (200 OK):
+    {
+        "success": true,
+        "data": {
+            "latitude": -33.437198,
+            "longitude": -70.638956,
+            "formatted_address": "Lastarria 305, Santiago Centro, Santiago, Chile",
+            "neighborhood": "Lastarria",
+            "comuna": "Santiago Centro",
+            "city": "Santiago",
+            "country": "Chile",
+            "confidence": 0.95
+        }
+    }
+
+    Response (400 Bad Request):
+    {
+        "success": false,
+        "error": "Coordenadas inválidas"
+    }
+    """
+    from .services.geocoding_service import GeocodingService, GeocodingError
+    from .validators import CoordinateValidator
+    from django.core.exceptions import ValidationError
+
+    latitude = request.data.get('latitude')
+    longitude = request.data.get('longitude')
+
+    if latitude is None or longitude is None:
+        return Response({
+            'success': False,
+            'error': 'Los campos "latitude" y "longitude" son requeridos'
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        # Convertir a float
+        lat = float(latitude)
+        lng = float(longitude)
+
+        # Validar coordenadas
+        CoordinateValidator.validate_coordinates(lat, lng)
+
+        # Reverse geocoding usando el servicio
+        service = GeocodingService()
+        result = service.reverse_geocode(lat, lng)
+
+        return Response({
+            'success': True,
+            'data': result.to_dict()
+        }, status=status.HTTP_200_OK)
+
+    except (ValueError, TypeError):
+        return Response({
+            'success': False,
+            'error': 'Las coordenadas deben ser números válidos'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    except ValidationError as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_400_BAD_REQUEST)
+    except GeocodingError as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        # Log error para debugging
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error inesperado en reverse_geocode: {str(e)}", exc_info=True)
+
+        return Response({
+            'success': False,
+            'error': 'Error interno al obtener la dirección. Por favor intenta nuevamente.'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

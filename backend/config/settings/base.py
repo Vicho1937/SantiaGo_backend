@@ -207,6 +207,12 @@ FRONTEND_URL = env('FRONTEND_URL', default='http://localhost:3000')
 SUPABASE_URL = env('SUPABASE_URL', default='')
 SUPABASE_JWT_SECRET = env('SUPABASE_JWT_SECRET', default='')
 
+# Mapbox Geocoding API
+MAPBOX_ACCESS_TOKEN = env(
+    'MAPBOX_ACCESS_TOKEN',
+    default='pk.eyJ1IjoibmFjaG8yNTQiLCJhIjoiY21pdGxyZjhnMHRlYjNnb243bnA1OG81ayJ9.BPTKLir4w184eLNzsao9XQ'
+)
+
 # ===========================================
 # SENTRY ERROR TRACKING
 # ===========================================

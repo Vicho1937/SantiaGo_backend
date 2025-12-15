@@ -6,7 +6,11 @@ app_name = 'businesses'
 urlpatterns = [
     # Categories
     path('categories/', views.CategoryListView.as_view(), name='category-list'),
-    
+
+    # Geocodificación (debe ir antes de las rutas con slug)
+    path('geocode/', views.geocode_address, name='geocode-address'),
+    path('reverse-geocode/', views.reverse_geocode, name='reverse-geocode'),
+
     # Businesses públicos
     path('', views.BusinessListView.as_view(), name='business-list'),
     path('<slug:slug>/', views.BusinessDetailView.as_view(), name='business-detail'),
