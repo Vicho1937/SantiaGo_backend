@@ -28,14 +28,26 @@ class TagAdmin(admin.ModelAdmin):
 
 @admin.register(Business)
 class BusinessAdmin(admin.ModelAdmin):
-    list_display = ['name', 'category', 'owner', 'created_by_owner', 'status', 'neighborhood', 'rating', 'review_count', 'verified', 'is_active']
+    list_display = ['name', 'category', 'owner', 'owner_has_permissions', 'created_by_owner', 'status', 'neighborhood', 'rating', 'review_count', 'verified', 'is_active']
     list_filter = ['category', 'status', 'created_by_owner', 'neighborhood', 'verified', 'is_active', 'is_featured']
-    search_fields = ['name', 'description', 'address']
+    search_fields = ['name', 'description', 'address', 'owner__email']
     prepopulated_fields = {'slug': ('name',)}
     filter_horizontal = ['features', 'tags']
     readonly_fields = ['rating', 'review_count', 'views', 'favorites_count', 'visits_count', 'created_at', 'updated_at']
-    
-    actions = ['approve_businesses', 'reject_businesses', 'mark_as_pending']
+
+    actions = ['approve_businesses', 'reject_businesses', 'mark_as_pending', 'auto_publish_approved_owners']
+
+    def owner_has_permissions(self, obj):
+        """Indica si el propietario tiene permisos aprobados"""
+        if obj.owner and obj.created_by_owner:
+            try:
+                profile = BusinessOwnerProfile.objects.get(user=obj.owner)
+                return profile.can_create_businesses
+            except BusinessOwnerProfile.DoesNotExist:
+                return False
+        return None
+    owner_has_permissions.boolean = True
+    owner_has_permissions.short_description = 'Propietario Aprobado'
     
     fieldsets = (
         ('Información Básica', {
@@ -90,6 +102,47 @@ class BusinessAdmin(admin.ModelAdmin):
         updated = queryset.update(status='pending_review')
         self.message_user(request, f"{updated} negocios marcados como pendientes")
     mark_as_pending.short_description = "⏳ Marcar como pendiente de revisión"
+
+    def auto_publish_approved_owners(self, request, queryset):
+        """
+        Publica automáticamente negocios que están pendientes pero pertenecen
+        a usuarios con permisos aprobados (can_create_businesses=True)
+        """
+        from django.utils import timezone
+
+        # Filtrar solo negocios pendientes creados por propietarios
+        pending_businesses = queryset.filter(
+            status='pending_review',
+            created_by_owner=True
+        )
+
+        # Obtener IDs de usuarios con permisos
+        approved_profiles = BusinessOwnerProfile.objects.filter(can_create_businesses=True)
+        approved_user_ids = approved_profiles.values_list('user_id', flat=True)
+
+        # Filtrar negocios de usuarios aprobados
+        businesses_to_publish = pending_businesses.filter(owner_id__in=approved_user_ids)
+
+        updated = businesses_to_publish.update(
+            status='published',
+            approved_by=request.user,
+            approved_at=timezone.now()
+        )
+
+        if updated > 0:
+            self.message_user(
+                request,
+                f"✅ {updated} negocios publicados automáticamente (propietarios con permisos aprobados)",
+                level='success'
+            )
+        else:
+            self.message_user(
+                request,
+                "No se encontraron negocios pendientes de propietarios aprobados en la selección",
+                level='warning'
+            )
+
+    auto_publish_approved_owners.short_description = "🚀 Auto-publicar negocios de propietarios aprobados"
 
 
 @admin.register(Favorite)

@@ -238,23 +238,35 @@ def owner_profile(request):
 def create_my_business(request):
     """Crear un negocio (solo usuarios con permisos)"""
     profile, created = BusinessOwnerProfile.objects.get_or_create(user=request.user)
-    
+
     if not profile.can_create_more:
         return Response({
             'error': 'No tienes permiso para crear más negocios',
             'max_allowed': profile.max_businesses_allowed,
             'created': profile.businesses_created_count
         }, status=status.HTTP_403_FORBIDDEN)
-    
+
     serializer = BusinessCreateSerializer(data=request.data, context={'request': request})
     if serializer.is_valid():
         business = serializer.save()
+
+        # Mensaje dinámico basado en el estado del negocio
+        if business.status == 'published':
+            message = 'Negocio creado y publicado exitosamente. Ya es visible para todos los usuarios.'
+        else:
+            message = 'Negocio creado exitosamente. Está pendiente de revisión por un administrador.'
+
         return Response({
-            'message': 'Negocio creado exitosamente. Está pendiente de revisión.',
-            'business': BusinessDetailSerializer(business).data
+            'success': True,
+            'message': message,
+            'business': BusinessDetailSerializer(business).data,
+            'status': business.status
         }, status=status.HTTP_201_CREATED)
-    
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    return Response({
+        'success': False,
+        'errors': serializer.errors
+    }, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])

@@ -200,17 +200,43 @@ class BusinessCreateSerializer(serializers.ModelSerializer):
         # Extraer ManyToMany antes de crear
         features = validated_data.pop('features', [])
         tags = validated_data.pop('tags', [])
-        
+
+        # Determinar status basado en el perfil del usuario
+        user = self.context['request'].user
+        initial_status = self._determine_initial_status(user)
+
         # Crear negocio
         business = Business.objects.create(
             **validated_data,
-            owner=self.context['request'].user,
+            owner=user,
             created_by_owner=True,
-            status='pending_review'
+            status=initial_status
         )
-        
+
         # Agregar relaciones
         business.features.set(features)
         business.tags.set(tags)
-        
+
         return business
+
+    def _determine_initial_status(self, user):
+        """
+        Determina el estado inicial del negocio basado en los permisos del usuario.
+
+        Lógica de negocio:
+        - Usuario con BusinessOwnerProfile y can_create_businesses=True → 'published'
+        - Usuario sin permisos o no verificado → 'pending_review'
+
+        Returns:
+            str: 'published' o 'pending_review'
+        """
+        try:
+            owner_profile = BusinessOwnerProfile.objects.get(user=user)
+            # Si el usuario tiene permisos verificados, publicar directamente
+            if owner_profile.can_create_businesses:
+                return 'published'
+        except BusinessOwnerProfile.DoesNotExist:
+            pass
+
+        # Sin perfil o sin permisos, requiere revisión
+        return 'pending_review'
