@@ -336,21 +336,46 @@ def update_my_business(request, business_id):
         if field in request.data:
             setattr(business, field, request.data[field])
 
-    # Manejar category si viene como slug
+    # Manejar category si viene como slug, UUID, o objeto
     if 'category' in request.data:
+        from .models import Category
+        category_data = request.data['category']
+
         try:
-            if isinstance(request.data['category'], str):
-                # Si viene como slug, buscar la categoría
-                from .models import Category
-                category = Category.objects.get(slug=request.data['category'])
+            # Si viene como diccionario/objeto, extraer slug o id
+            if isinstance(category_data, dict):
+                category_slug = category_data.get('slug') or category_data.get('id')
+                if not category_slug:
+                    return Response({
+                        'success': False,
+                        'error': 'La categoría debe incluir "slug" o "id"'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+                category_data = category_slug
+
+            # Ahora category_data es un string (slug o UUID)
+            if isinstance(category_data, str):
+                # Intentar primero por slug
+                category = Category.objects.filter(slug=category_data).first()
+                if not category:
+                    # Intentar por UUID
+                    try:
+                        category = Category.objects.get(id=category_data)
+                    except (Category.DoesNotExist, ValueError):
+                        return Response({
+                            'success': False,
+                            'error': f"Categoría '{category_data}' no encontrada"
+                        }, status=status.HTTP_400_BAD_REQUEST)
                 business.category = category
             else:
-                # Si viene como ID, asignar directamente
-                business.category_id = request.data['category']
-        except Category.DoesNotExist:
+                return Response({
+                    'success': False,
+                    'error': 'Formato de categoría inválido'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
             return Response({
                 'success': False,
-                'error': f"Categoría '{request.data['category']}' no encontrada"
+                'error': f'Error al procesar categoría: {str(e)}'
             }, status=status.HTTP_400_BAD_REQUEST)
 
     # Manejar features (ManyToMany)
