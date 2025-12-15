@@ -49,12 +49,29 @@ https://rutago-nine.vercel.app
 
 Las imágenes deberían actualizarse automáticamente.
 
-## Negocios que se actualizarán:
+## Negocios que se actualizarán con imágenes específicas:
 
-1. **Café Literario** → Café artesanal moderno
-2. **Librería Catalonia** → Interior de librería elegante
-3. **Patio Bellavista** → Espacio urbano vibrante
-4. **Galería Artespacio** → Galería de arte contemporáneo
-5. **Bar The Clinic** → Bar moderno con ambiente
+1. **Café Literario** 📚
+   - Imagen: Café acogedor con libros en el fondo
+   - Atmósfera: Literaria y cultural
 
-Todas las imágenes son de alta calidad: 1200px, q=85, desde Unsplash.
+2. **Librería Catalonia** 📖
+   - Imagen: Estanterías llenas de libros coloridos
+   - Atmósfera: Librería clásica y acogedora
+
+3. **Patio Bellavista** 🍽️
+   - Imagen: Restaurante con terraza y mesas al aire libre
+   - Atmósfera: Casual y social
+
+4. **Galería Artespacio** 🎨
+   - Imagen: Galería de arte contemporáneo con obras exhibidas
+   - Atmósfera: Artística y moderna
+
+5. **Bar The Clinic** 🍺
+   - Imagen: Bar moderno con iluminación cálida y ambiente nocturno
+   - Atmósfera: Urbana y vibrante
+
+Todas las imágenes son:
+- **Específicas** para cada tipo de negocio
+- **Alta calidad**: 1200px ancho, calidad 85
+- **Profesionales**: Fotos de Unsplash con licencia libre
