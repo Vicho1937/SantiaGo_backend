@@ -304,3 +304,174 @@ class BusinessView(models.Model):
     
     def __str__(self):
         return f"Vista de {self.business.name} - {self.viewed_at}"
+
+
+class BusinessImage(models.Model):
+    """Imágenes de negocios con metadatos"""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name='business_images')
+    
+    # Imagen
+    image_url = models.URLField(verbose_name="URL de imagen")
+    thumbnail_url = models.URLField(blank=True, verbose_name="URL de miniatura")
+    
+    # Metadatos
+    caption = models.CharField(max_length=255, blank=True, verbose_name="Descripción")
+    alt_text = models.CharField(max_length=255, blank=True, verbose_name="Texto alternativo")
+    
+    # Tipo de imagen
+    IMAGE_TYPE_CHOICES = [
+        ('cover', 'Portada'),
+        ('gallery', 'Galería'),
+        ('logo', 'Logo'),
+        ('menu', 'Menú'),
+        ('interior', 'Interior'),
+        ('exterior', 'Exterior'),
+        ('product', 'Producto'),
+    ]
+    image_type = models.CharField(max_length=20, choices=IMAGE_TYPE_CHOICES, default='gallery')
+    
+    # Orden y estado
+    order = models.IntegerField(default=0, verbose_name="Orden")
+    is_active = models.BooleanField(default=True, verbose_name="Activa")
+    is_approved = models.BooleanField(default=True, verbose_name="Aprobada")
+    
+    # Quién subió
+    uploaded_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name='uploaded_images')
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'business_images'
+        verbose_name = 'Imagen de Negocio'
+        verbose_name_plural = 'Imágenes de Negocios'
+        ordering = ['business', 'order', '-created_at']
+    
+    def __str__(self):
+        return f"{self.business.name} - {self.image_type} #{self.order}"
+
+
+class OpeningHours(models.Model):
+    """Horarios de apertura de negocios"""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name='opening_hours')
+    
+    DAY_CHOICES = [
+        (0, 'Lunes'),
+        (1, 'Martes'),
+        (2, 'Miércoles'),
+        (3, 'Jueves'),
+        (4, 'Viernes'),
+        (5, 'Sábado'),
+        (6, 'Domingo'),
+    ]
+    
+    day_of_week = models.IntegerField(choices=DAY_CHOICES, verbose_name="Día de la semana")
+    
+    # Horarios
+    opens_at = models.TimeField(null=True, blank=True, verbose_name="Hora de apertura")
+    closes_at = models.TimeField(null=True, blank=True, verbose_name="Hora de cierre")
+    
+    # Segundo turno (para negocios que cierran a medio día)
+    opens_at_2 = models.TimeField(null=True, blank=True, verbose_name="Segunda apertura")
+    closes_at_2 = models.TimeField(null=True, blank=True, verbose_name="Segundo cierre")
+    
+    # Estado
+    is_closed = models.BooleanField(default=False, verbose_name="Cerrado este día")
+    is_24h = models.BooleanField(default=False, verbose_name="Abierto 24 horas")
+    
+    # Notas especiales
+    notes = models.CharField(max_length=255, blank=True, verbose_name="Notas")
+    
+    class Meta:
+        db_table = 'opening_hours'
+        verbose_name = 'Horario de Apertura'
+        verbose_name_plural = 'Horarios de Apertura'
+        unique_together = ['business', 'day_of_week']
+        ordering = ['business', 'day_of_week']
+    
+    def __str__(self):
+        day_name = dict(self.DAY_CHOICES).get(self.day_of_week)
+        if self.is_closed:
+            return f"{self.business.name} - {day_name}: Cerrado"
+        if self.is_24h:
+            return f"{self.business.name} - {day_name}: 24 horas"
+        return f"{self.business.name} - {day_name}: {self.opens_at} - {self.closes_at}"
+
+
+class Report(models.Model):
+    """Reportes de contenido inapropiado"""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    
+    # Quién reporta
+    reporter = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reports_made')
+    
+    # Tipo de contenido reportado
+    CONTENT_TYPE_CHOICES = [
+        ('business', 'Negocio'),
+        ('review', 'Reseña'),
+        ('image', 'Imagen'),
+        ('user', 'Usuario'),
+    ]
+    content_type = models.CharField(max_length=20, choices=CONTENT_TYPE_CHOICES, verbose_name="Tipo de contenido")
+    
+    # Referencias al contenido (solo uno será usado)
+    business = models.ForeignKey(Business, null=True, blank=True, on_delete=models.CASCADE, related_name='reports')
+    review = models.ForeignKey('reviews.Review', null=True, blank=True, on_delete=models.CASCADE, related_name='reports')
+    image = models.ForeignKey(BusinessImage, null=True, blank=True, on_delete=models.CASCADE, related_name='reports')
+    reported_user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE, related_name='reports_received')
+    
+    # Razón del reporte
+    REASON_CHOICES = [
+        ('spam', 'Spam o publicidad'),
+        ('inappropriate', 'Contenido inapropiado'),
+        ('false_info', 'Información falsa'),
+        ('harassment', 'Acoso o bullying'),
+        ('copyright', 'Violación de copyright'),
+        ('fraud', 'Fraude o estafa'),
+        ('other', 'Otro'),
+    ]
+    reason = models.CharField(max_length=20, choices=REASON_CHOICES, verbose_name="Razón")
+    description = models.TextField(verbose_name="Descripción detallada")
+    
+    # Evidencia
+    evidence_urls = models.JSONField(default=list, blank=True, verbose_name="URLs de evidencia")
+    
+    # Estado del reporte
+    STATUS_CHOICES = [
+        ('pending', 'Pendiente'),
+        ('reviewing', 'En revisión'),
+        ('resolved', 'Resuelto'),
+        ('dismissed', 'Desestimado'),
+    ]
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', verbose_name="Estado")
+    
+    # Resolución
+    ACTION_CHOICES = [
+        ('no_action', 'Sin acción'),
+        ('warning', 'Advertencia enviada'),
+        ('content_removed', 'Contenido eliminado'),
+        ('user_suspended', 'Usuario suspendido'),
+        ('user_banned', 'Usuario baneado'),
+    ]
+    action_taken = models.CharField(max_length=20, choices=ACTION_CHOICES, blank=True, verbose_name="Acción tomada")
+    resolution_notes = models.TextField(blank=True, verbose_name="Notas de resolución")
+    
+    # Moderador
+    reviewed_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name='reports_reviewed')
+    reviewed_at = models.DateTimeField(null=True, blank=True, verbose_name="Fecha de revisión")
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'reports'
+        verbose_name = 'Reporte'
+        verbose_name_plural = 'Reportes'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"Reporte #{str(self.id)[:8]} - {self.get_reason_display()} ({self.get_status_display()})"
